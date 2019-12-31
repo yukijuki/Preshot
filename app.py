@@ -4,42 +4,41 @@ import datetime
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://App:fmg9akimbo@localhost/preshot"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///site.db"
 app.config["SECRET_KEY"] = "super-secret"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 
 app.debug = True
 db = SQLAlchemy(app)
-# db.drop_all()
-# db.create_all()
+
 
 # Define Models
 
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(80), unique=True)
-    password = db.Column(db.Integer(1))
-    name = db.Column(db.String(80), unique=True)
-    faculty = db.Column(db.String(80))
-    club = db.Column(db.String(80))
-    lab = db.Column(db.String(80))
-    industry = db.Column(db.String(80))
-    position = db.Column(db.String(80))
+    email = db.Column(db.String(80), nullable=False, unique=True)
+    password = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.String(80), nullable=False, unique=True)
+    faculty = db.Column(db.String(80), nullable=False)
+    club = db.Column(db.String(80), nullable=False)
+    lab = db.Column(db.String(80), nullable=False)
+    industry = db.Column(db.String(80), nullable=False)
+    position = db.Column(db.String(80), nullable=False)
     signed_up_at = db.Column(db.DateTime())
 
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True)
-    filename = db.Column(db.String(255), unique=True)
-    link = db.Column(db.String(255))
-    faculty = db.Column(db.String(80))
-    firm = db.Column(db.String(80))
-    industry = db.Column(db.String(80))
-    position = db.Column(db.String(80))
-    lab = db.Column(db.String(80))
-    club = db.Column(db.String(80))
-    wagamanchi = db.Column(db.String(255))
-    ask_clicks = db.Column(db.Integer)
+    name = db.Column(db.String(80), nullable=False, unique=True)
+    filename = db.Column(db.String(255), nullable=False, unique=True, default="default.jpg")
+    link = db.Column(db.String(255), nullable=False)
+    faculty = db.Column(db.String(80), nullable=False)
+    firm = db.Column(db.String(80), nullable=False)
+    industry = db.Column(db.String(80), nullable=False)
+    position = db.Column(db.String(80), nullable=False)
+    lab = db.Column(db.String(80), nullable=False)
+    club = db.Column(db.String(80), nullable=False)
+    wagamanchi = db.Column(db.String(255), nullable=False)
+    ask_clicks = db.Column(db.Integer, default=0)
 
 class Ask(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -53,6 +52,9 @@ class Ask(db.Model):
     created_at = db.Column(db.DateTime())
 
 #----------------------------------------------------------------
+# db.drop_all()
+# db.create_all()
+# db.session.commit()
 #User login
 
 @app.route("/register", methods=["POST"])
