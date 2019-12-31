@@ -4,43 +4,53 @@ import datetime
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:fmg9akimbo@localhost/monsi"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://App:fmg9akimbo@localhost/preshot"
 app.config["SECRET_KEY"] = "super-secret"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 
 app.debug = True
 db = SQLAlchemy(app)
+# db.drop_all()
 # db.create_all()
 
 # Define Models
 
-class User(db.Model):
+class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), unique=True)
-    confirmed_at = db.Column(db.DateTime())
-    
+    email = db.Column(db.String(80), unique=True)
+    password = db.Column(db.Integer(1))
+    name = db.Column(db.String(80), unique=True)
+    faculty = db.Column(db.String(80))
+    club = db.Column(db.String(80))
+    lab = db.Column(db.String(80))
+    industry = db.Column(db.String(80))
+    position = db.Column(db.String(80))
+    signed_up_at = db.Column(db.DateTime())
 
-class Image(db.Model):
+class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    image_id = db.Column(db.String(255), unique=True)
-    url = db.Column(db.String(255), unique=True)
+    name = db.Column(db.String(80), unique=True)
+    filename = db.Column(db.String(255), unique=True)
     link = db.Column(db.String(255))
-    count_likes = db.Column(db.Integer)
+    faculty = db.Column(db.String(80))
+    firm = db.Column(db.String(80))
+    industry = db.Column(db.String(80))
+    position = db.Column(db.String(80))
+    lab = db.Column(db.String(80))
+    club = db.Column(db.String(80))
+    wagamanchi = db.Column(db.String(255))
+    ask_clicks = db.Column(db.Integer)
 
-class Log(db.Model):
+class Ask(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), unique=True)
-    image_id = db.Column(db.String(255))
+    student_email = db.Column(db.String(80))
+    employee_name = db.Column(db.String(80))
+    club = db.Column(db.String(80))
+    lab = db.Column(db.String(80))
+    industry = db.Column(db.String(80))
+    firm = db.Column(db.String(80))
+    position = db.Column(db.String(80))
     created_at = db.Column(db.DateTime())
-
-
-class Like(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), unique=True)
-+    image_id = db.Column(db.String(255), unique=True)
-    like = db.Column(db.Boolean)
-    created_at = db.Column(db.DateTime())
-
 
 #----------------------------------------------------------------
 #User login
@@ -52,151 +62,130 @@ def register():
     """
     data = {
         "email":"Str",
+        "password" = 6,
+        "name": "Str",
+        "faculty" = "Str",
+        "club" = "Str",
+        "lab" = "Str",
+        "industry" = "Str",
+        "position": "Str"
     }
     """
 
-    newuser = User(email=data["email"], confirmed_at=datetime.datetime.now())
+    newuser = Student(
+        email = data["email"], 
+        password = data["password"], 
+        name = data["name"],
+        faculty = data["faculty"],
+        club = data["club"],
+        lab = data["lab"],
+        industry = data["industry"],
+        position = data["position"],
+        signed_up_at=datetime.datetime.now()
+    )
     db.session.add(newuser)
     db.session.commit()
 
     return jsonify({"user": newuser})
 
 
-@app.route("/login/", methods=["GET"])
+@app.route("/login", methods=["GET"])
 def login():
     data = request.get_json()
     """
     data = {
         "email":"Str",
+        "pass":"int"
     }
     """
 
-    user = User.query.filter_by(email=data["email"]).first()
+    user = Student.query.filter_by(email=data["email"]).first()
 
     if user is None:
-        return jsonify({"message":"No user found"})
+        return jsonify({"message":"ユーザが見つかりません、先に登録してください。"})
+
     else:
-        return jsonify({"message":"Logined Succesfully"})
+        if user.password == data["password"]:
+            return jsonify({"message":"Logined Succesfully"})
+
+        else:
+            return jsonify({"message":"パスワードが違います。"})
+
+
+@app.route("/get_employees", methods=["GET"])
+def get_employees():
+    data = request.get_json()
     
+    """
+    data = {
+        "faculty" = "Str",
+        "firm" = "Str",
+        "industry" = "Str",
+        "position": "Str",
+        "lab" = "Str",
+        "club" = "Str",
+    }
+    """
 
-#-------------------------------------------------------
-#Image 
+    employees = Employee.query.all()
 
-@app.route("/get_first_image", methods=["GET"])
-def get_first_image():
+    #Sort with function
+    def sort():
+        return employees, common
 
-    image = Image.query.first()
-    
     response = []
 
-    image_data = {}
-    image_data["image_id"] = image.image_id
-    image_data["url"] = image.url
-    image_data["link"] = image.link
-    image_data["count_likes"] = image.count_likes
-    response.append(image_data)
+    for emplyee in employees:
+        employee_data = {}
+        employee_data["name"] = Employee.name
+        employee_data["filename"] = Employee.filename
+        employee_data["link"] = Employee.link
+        employee_data["faculty"] = Employee.faculty
+        employee_data["firm"] = Employee.firm
+        employee_data["industry"] = Employee.industry
+        employee_data["position"] = Employee.position
+        employee_data["lab"] = Employee.lab
+        employee_data["club"] = Employee.club
+        employee_data["wagamanchi"] = Employee.wagamanchi
+        employee_data["ask_clicks"] = Employee.ask_clicks
+        response.append(employee_data)
 
-    return jsonify({"images": response})
-
-
-@app.route("/get_images", methods=["GET"])
-def get_images():
-    images = Image.query.all()
-    
-    response = []
-
-    for image in images:
-        image_data = {}
-        image_data["image_id"] = image.image_id
-        image_data["url"] = image.url
-        image_data["link"] = image.link
-        image_data["count_likes"] = image.count_likes
-        response.append(image_data)
-
-    return jsonify({"images": response})
+    return jsonify({"list of employees": response})
 
 
-@app.route("/click_images", methods=["Post"])
-def click_images():
+@app.route("/ask_click", methods=["GET","Post"])
+def ask_click():
     data = request.get_json()
     """
     data = {
         "email":"Str",
-        "image_id":"Int"
+        "employee_name":"Str"
+        "industry":"Str",
+        "firm":"Str"
+        "position":"Str",
+        "lab":"Str"
+        "club":"Str",
     }
     """
-    #is post better or insert better for log?
-    log = Log(email=data["email"], image_id=data["image_id"], created_at=datetime.datetime.now())
-    db.session.add(log)
+    employee = Employee.query.filter_by(name=data["employee_name"]).first()
+    if employee.ask_clicks is None:
+        employee.ask_clicks == 1
+    else:
+        employee.ask_clicks += 1
+    asklog = Ask(
+        email=data["email"], 
+        employee_name=data["employee_name"], 
+        industry=data["industry"], 
+        firm=data["firm"], 
+        position=data["position"], 
+        lab=data["lab"], 
+        club=data["club"], 
+        created_at=datetime.datetime.now())
+
+    db.session.add(asklog)
     db.session.commit()
 
     return jsonify({"images": "clicked"})
-
-
-@app.route("/likes/", methods=["GET", "POST"])
-def like_images():
-    data = request.get_json()
-
-    """
-    data = {
-        "email":"Str",
-        "image_id":"Int"
-    }
-    """
-
-    like = Like.query.filter_by(email=data["email"]).filter_by(image_id=data["image_id"]).all()
-
-    #Delete
-    if like is not None: 
-        db.session.delete(like)
-        image = Image.query.filter_by(image_id=data["image_id"]).all()
-        image.count_likes -= 1
-        db.session.commit()
-
-        return jsonify({"message": "succesfully unliked"})
-
-    #Post
-    else: #when its first time to like there is nothing in the db 
-        like = like(email=data["email"], image_id=data["image_id"], like=True, created_at=datetime.datetime.now())
-        db.session.add(like)
-
-        image = Image.query.filter_by(image_id=data["image_id"]).all()
-        if image.count_likes is None:
-            image.count = 1
-        else:
-            image.count_likes += 1
-        db.session.commit()
-
-        return jsonify({"message": "succesfully liked"})
-
-
-@app.route("/load_like", methods=["Get"])
-def load_like():
-    data = request.get_json()
-
-    """
-    data = {
-        "email":"Str",
-        "image_id":"Int"
-    }
-    """
-    #want to load not just like table but like and Image joined
-    #loads images that we liked in the order of latest
-    
-    like = Like.query.filter_by(email=data["email"]).filter_by(image_id=data["image_id"]).order_by(Like.created_at.desc()).all()
-    images = Image.query.filter_by(image_id=like.image_id).all()
-
-    response = []
-
-    for image in images:
-        image_data = {}
-        image_data["image_id"] = image.image_id
-        image_data["url"] = image.url
-        image_data["link"] = image.link
-        image_data["count_likes"] = image.count_likes
-        response.append(image_data)
-
-    return jsonify({"images": response})
 
 if __name__ == "__main__":
     app.run()
