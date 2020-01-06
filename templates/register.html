@@ -3,14 +3,15 @@
 
     <h1>Sign up<h1>
 
-    <form action="/register" method="POST">
+    <form action="/register" method="post" novalidate>
 
         <label>Email</label>
-        <input class="form-control" type="email" name="email">
+        <input class="form-control" type="email" name="email" required>
 
         <label>Password</label>
-        <input class="form-control" type="password" name="password">
+        <input class="form-control" type="password" name="password" required>
 
         <button type="submit">Sign up</button>
+    </form>
 
 {% endblock content %}
