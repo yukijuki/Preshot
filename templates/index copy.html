@@ -14,7 +14,7 @@
     <br>
     <label> industry </label>
     <p>current -  {{ data["industry"] }} </p>
-    <input class="form-control" type="text" id="industry" placeholder = "業界を選んでね">
+    <input class="form-control" type="text" id="indsutry" placeholder = "業界を選んでね">
 
     <button type="submit" onclick="submit_entry();">Save</button>
 
@@ -35,12 +35,11 @@
             name: name.value,
             industry: industry.value
         }
-        console.log(entry)
 
         fetch(`${window.origin}/profile`, {
-            method: "POST",
-            credentials: "include",
-            body: JSON.stringify(entry),
+            method = "POST",
+            credential: "include",
+            body: JSON.stringfy(entry),
             cache: "no-cache",
             headers: new Headers({
                 "content-type": "application/json"
@@ -54,7 +53,6 @@
             }
 
             response.json().then(function (data) {
-                location.reload();
                 console.log(data)
             })
         })

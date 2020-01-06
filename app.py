@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, send_from_directory, jsonify
+from flask import Flask, request, redirect, session, send_from_directory, jsonify, render_template, make_response, url_for
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 
@@ -17,13 +17,9 @@ db = SQLAlchemy(app)
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(80), nullable=False, unique=True)
-    password = db.Column(db.Integer, nullable=False)
-    name = db.Column(db.String(80), nullable=False, unique=True)
-    faculty = db.Column(db.String(80), nullable=False)
-    club = db.Column(db.String(80), nullable=False)
-    lab = db.Column(db.String(80), nullable=False)
-    industry = db.Column(db.String(80), nullable=False)
-    position = db.Column(db.String(80), nullable=False)
+    name = db.Column(db.String(80), unique=True)
+    industry = db.Column(db.String(80))
+    password = db.Column(db.String(80))
     signed_up_at = db.Column(db.DateTime())
 
 class Employee(db.Model):
@@ -44,10 +40,7 @@ class Ask(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_email = db.Column(db.String(80))
     employee_name = db.Column(db.String(80))
-    club = db.Column(db.String(80))
-    lab = db.Column(db.String(80))
     industry = db.Column(db.String(80))
-    firm = db.Column(db.String(80))
     position = db.Column(db.String(80))
     created_at = db.Column(db.DateTime())
 
@@ -57,65 +50,113 @@ class Ask(db.Model):
 # db.session.commit()
 #User login
 
-@app.route("/register", methods=["POST"])
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    data = request.get_json()
-    
-    """
-    data = {
-        "email":"Str",
-        "password" = 6,
-        "name": "Str",
-        "faculty" = "Str",
-        "club" = "Str",
-        "lab" = "Str",
-        "industry" = "Str",
-        "position": "Str"
-    }
-    """
+    if request.method == "POST":
+        data = request.form
+        print(data)
 
-    newuser = Student(
-        email = data["email"], 
-        password = data["password"], 
-        name = data["name"],
-        faculty = data["faculty"],
-        club = data["club"],
-        lab = data["lab"],
-        industry = data["industry"],
-        position = data["position"],
-        signed_up_at=datetime.datetime.now()
-    )
-    db.session.add(newuser)
-    db.session.commit()
+        """
+        data = {
+            "email":"Str",
+            "password" = 6,
+        }
+        """
+        session["Email"] = data["email"]
 
-    return jsonify({"user": newuser})
+        student = Student.query.filter_by(email=data["email"]).first()
+        print(student)
+        if student is None:
+            newuser = Student(
+            email = data["email"], 
+            password = data["password"], 
+            signed_up_at=datetime.datetime.now()
+            )
+            db.session.add(newuser)
+            db.session.commit()
+            #"account created"
+            return redirect(url_for('profile'))
+        
+        else:
+            if student.password == data["password"]:
+                return redirect(url_for('home'))
 
+            else:  
+                #"password is wrong"
+                return redirect(request.url)
 
+    return render_template("register.html")
+
+@app.route("/profile", methods=["Get", "POST"])
+def profile():
+    email = None
+    if session.get("Email", None) is not None:
+        email = session.get("Email")
+    else:
+        redirect(url_for('register'))
+
+    print(email)
+    student = Student.query.filter_by(email=email).first()
+
+    if  request.method == "POST":
+        data = request.get_json()
+        print("check")
+        print(data)
+
+        """
+        data = {
+            "email": "Str",
+            "name": "Str",
+            "industry" = "Str",
+        }
+        """
+        student.password = data["password"]
+        student.name = data["name"]
+        student.industry = data["industry"]
+        db.session.commit()
+
+        response = make_response(jsonify(data, 200))
+        return response
+
+        
+
+    return render_template("profile.html", data = student)
+
+'''
 @app.route("/login", methods=["GET"])
 def login():
-    data = request.get_json()
-    """
-    data = {
-        "email":"Str",
-        "pass":"int"
-    }
-    """
+    if request.method == "GET":
+        data = request.form
 
-    user = Student.query.filter_by(email=data["email"]).first()
+        print(data)
+        """
+        data = {
+            "email":"Str",
+            "password":"int"
+        }
+        """
 
-    if user is None:
-        return jsonify({"message":"ユーザが見つかりません、先に登録してください。"})
+        student = Student.query.filter_by(email=data["email"]).first()
 
-    else:
-        if user.password == data["password"]:
-            return jsonify({"message":"Logined Succesfully"})
+        if student is None:
+            return jsonify({"message": "need to sign up first"}) #render_template("register.html", message = "email not found")
 
         else:
-            return jsonify({"message":"パスワードが違います。"})
+            if student.password == data["password"]:
+                return jsonify({"message": "you made it"}) #render_template("home.html", title="Login", form=form)
 
+            else:
+                return jsonify({"message": "password is wrong"}) #render_template("login.html", message = "password is wrong")
+    return render_template("login.html")
+'''
 
-@app.route("/get_employees", methods=["GET"])
-def get_employees():
+@app.route("/home", methods=["GET"])
+def home():
     data = request.get_json()
     
     """
@@ -132,8 +173,8 @@ def get_employees():
     employees = Employee.query.all()
 
     #Sort with function
-    def sort():
-        return employees, common
+    # def sort():
+    #     return employees, common
 
     response = []
 
@@ -152,7 +193,7 @@ def get_employees():
         employee_data["ask_clicks"] = Employee.ask_clicks
         response.append(employee_data)
 
-    return jsonify({"list of employees": response})
+    return render_template("home.html", data = response)
 
 
 @app.route("/ask_click", methods=["GET","Post"])
@@ -178,16 +219,11 @@ def ask_click():
         email=data["email"], 
         employee_name=data["employee_name"], 
         industry=data["industry"], 
-        firm=data["firm"], 
         position=data["position"], 
-        lab=data["lab"], 
-        club=data["club"], 
         created_at=datetime.datetime.now())
 
     db.session.add(asklog)
     db.session.commit()
 
-    return jsonify({"images": "clicked"})
-
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
